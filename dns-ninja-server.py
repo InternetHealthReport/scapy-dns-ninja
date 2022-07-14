@@ -1,21 +1,22 @@
 #!/usr/bin/env python
 ### adapted from : http://thepacketgeek.com/scapy-p-09-scapy-and-dns/
-from scapy.all import *
+from scapy.layers.inet import IP, UDP
+from scapy.layers.dns import DNS, DNSRR
+from scapy.sendrecv import sniff, send
 import sys
 from random import shuffle
 import re
-import yaml
+from yaml import load, Loader
 import traceback
 import os.path
-import struct
 
 def read_conffile( filename ):
    conf = {}
    try:
-      with open(filename,'r') as fh:
-         conf = yaml.load( fh )
+      with open(filename,'rb') as fh:
+         conf = load(fh, Loader)
    except:
-      print >>sys.stderr,"Error reading config file: %s" % ( filename )
+      sys.stderr.write("Error reading config file: %s\n" % ( filename ))
    return conf
 
 conf = read_conffile('ninja-server.conf')
@@ -23,7 +24,7 @@ lists = {'v4':{},'v6':{}, 'cnames':{}}
 
 def read_destfile( list_name, lists, proto ):
     filename = "./%s/dests.%s.txt" % ( list_name, proto )
-    print >>sys.stderr, "trying to read list %s / proto %s from file: %s" % ( list_name, proto, filename )
+    sys.stderr.write( "trying to read list %s / proto %s from file: %s\n" % ( list_name, proto, filename ) )
     dests = []
     with open(filename,'r') as fh:
         for line in fh:
@@ -38,7 +39,7 @@ def read_destfile( list_name, lists, proto ):
         'length': len(dests),
         'dest_idx': 0
     }
-    print >>sys.stderr, "list %s / proto %s successfully loaded" % ( list_name, proto )
+    sys.stderr.write( "list %s / proto %s successfully loaded\n" % ( list_name, proto ))
     return lists
 
 ## read the default list
@@ -53,7 +54,7 @@ try:
 except: pass
 ### need at least v4/v6 list
 if not lists_read > 0:
-   print >>sys.stderr,"need at least a default IPv4 or default IPv6 list"
+   sys.stderr.write("need at least a default IPv4 or default IPv6 list\n")
    sys.exit(0)
 
 def generate_response( pkt, dest, proto ):
@@ -91,7 +92,7 @@ def DNS_Responder(conf,lists):
     re_getlist = re.compile(r'([a-z0-9\-]+)\.%s\.$' % ( conf['ServerDomain'] ) )
     def getResponse(pkt):
         global dest_idx
-        if (DNS in pkt and pkt[DNS].opcode == 0L and pkt[DNS].ancount == 0 and pkt[IP].src != conf['ServerIP']):
+        if(DNS in pkt and pkt[DNS].opcode == 0L and pkt[DNS].ancount == 0 and pkt[IP].src != conf['ServerIP']):
             try:
                pkt_proto = None
                if pkt[DNS].qd.qtype == 1:
@@ -112,7 +113,7 @@ def DNS_Responder(conf,lists):
                           read_destfile( list_name, lists, pkt_proto )
                       except: 
                           # list dir does exist, but not for the right proto. return nothing
-                          print >>sys.stderr,"%s dir exists, but no dests.%s.txt file" % ( list_name, pkt_proto )
+                          sys.stderr.write("%s dir exists, but no dests.%s.txt file\n" % ( list_name, pkt_proto ))
                           return
                    ##if not dests.v[46].txt , see if there is a dests.cnames.txt file
                    elif have_listfile( list_name, 'cnames') and ( list_name not in lists['cnames'] or os.path.getmtime("./%s/dests.cnames.txt" % (list_name) ) > lists['cnames'][list_name]['mtime']):
@@ -120,7 +121,7 @@ def DNS_Responder(conf,lists):
                           read_destfile( list_name, lists, 'cnames' )
                       except: 
                           # list dir does exist, but not for the right proto. return nothing
-                          print >>sys.stderr,"%s dir exists, but no dests.%s.txt file" % ( list_name, 'cnames' )
+                          sys.stderr.write("%s dir exists, but no dests.%s.txt file\n" % ( list_name, 'cnames' ))
                           return
                ## set pkt_proto to 'cnames' if v4 and v6 list don't exist
                if list_name in lists['cnames'] and not list_name in lists['v4'] and not list_name in lists['v6']:
@@ -131,7 +132,7 @@ def DNS_Responder(conf,lists):
                    if lists[pkt_proto][list_name]['dest_idx'] < lists[pkt_proto][list_name]['length']-1:
                        lists[pkt_proto][list_name]['dest_idx'] += 1
                    else:
-                       print "list reset %s/%s" % ( pkt_proto,list_name )
+                       sys.stderr.write("list reset %s/%s\n" % ( pkt_proto,list_name ))
                        #TODO shuffle? configurable?
                        shuffle( lists[pkt_proto][list_name]['dests'] )
                        lists[pkt_proto][list_name]['dest_idx'] = 0 ## reset to beginning
@@ -139,16 +140,15 @@ def DNS_Responder(conf,lists):
                    send(resp,verbose=0)
                    return record( pkt[IP].src, list_name, pkt_proto, dest_ip )
                except:
-                    print >>sys.stderr,"error on packet: %s" % ( pkt.summary() )
-                    print >>sys.stderr,sys.exc_info()
-               else:
-                  print "query type not supported"
+                    sys.stderr.write("error on packet: %s\n" % ( pkt.summary() ))
+                    sys.stderr.write(str(sys.exc_info()))
             except:
-                print >>sys.stderr,"%s" % ( traceback.print_tb( sys.exc_info()[2] ) )
+                sys.stderr.write("%s" % ( traceback.print_tb( sys.exc_info()[2] ) ))
         else: 
-            print "no qd.qtype in this dns request?!"
+            sys.stderr.write("no qd.qtype in this dns request?!\n")
     return getResponse
 
-print >>sys.stderr, "config loaded, starting operation"
+sys.stderr.write( "config loaded, starting operation\n" )
 filter = "udp port 53 and ip dst %s and not ip src %s" % (conf['ServerIP'], conf['ServerIP'])
 sniff(filter=filter,store=0,prn=DNS_Responder(conf,lists))
+
