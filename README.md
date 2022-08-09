@@ -1,6 +1,6 @@
 Scapy experiment for measurement infrastructures (like RIPE Atlas) to probe multiple IP lists.
 
-needs a local config file called 'ninja-server.conf' in yaml format. Example:
+Needs a local config file called 'ninja-server.conf' in yaml format. Example:
 
     ---
     ServerIP: 192.168.0.1
