@@ -90,12 +90,11 @@ def have_listfile( list_name, proto ):
 def DNS_Responder(conf,lists):
     #TODO better regex
     re_getlist = re.compile(r'([a-z0-9\-]+)\.%s\.$' % ( conf['ServerDomain'] ) )
-    print(re_getlist)
     def getResponse(pkt):
         global dest_idx
         if(DNS in pkt and pkt[DNS].opcode == 0 and pkt[DNS].ancount == 0  and pkt[IP].dst == conf['ServerIP']and pkt[IP].src != conf['ServerIP']):
-            print("it is DNS")
             try:
+               qname = pkt[DNS].qd.qname.decode().lower()
                pkt_proto = None
                if pkt[DNS].qd.qtype == 1:
                   pkt_proto='v4'  
@@ -105,7 +104,7 @@ def DNS_Responder(conf,lists):
                   return
                # sensible default
                list_name = '_default'
-               list_match = re.search( re_getlist, pkt[DNS].qd.qname.lower() )
+               list_match = re.search( re_getlist, qname )
                if list_match and os.path.exists( "./%s" % ( list_match.group(1) ) ):
                    #this checks if the path exists
                    list_name = list_match.group(1)
@@ -151,12 +150,8 @@ def DNS_Responder(conf,lists):
     return getResponse
 
 sys.stderr.write( "config loaded, starting operation\n" )
+# there is no TCP because we don't listen on port 53
 filter = "udp port 53 and ip dst %s and not ip src %s" % (conf['ServerIP'], conf['ServerIP'])
-filter = "udp port 53"
-filter = "ip dst %s" % (conf['ServerIP'],)
-filter = "tcp"
-print(filter)
-#sniff(filter=filter,store=0,prn=DNS_Responder(conf,lists))
-scap = sniff(store=0,prn=DNS_Responder(conf,lists))
+scap = sniff(filter=filter,store=0,prn=DNS_Responder(conf,lists))
 scap.summary()
 
