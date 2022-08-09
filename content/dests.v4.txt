@@ -1,0 +1,14 @@
+google.com
+fbcdn.net
+www.akamai.com
+cloudflare.com
+aws.amazon.com
+www.edg.io
+www.edgecast.com
+www.twitter.com
+apple.com
+fastly.com
+www.cdn77.com
+www.ovh.com
+www.office.com
+teams.microsoft.com
