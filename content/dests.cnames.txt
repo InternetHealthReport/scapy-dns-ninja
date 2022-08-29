@@ -6,7 +6,7 @@ aws.amazon.com
 www.edg.io
 www.edgecast.com
 www.twitter.com
-apple.com
+swcdn.apple.com
 fastly.com
 www.cdn77.com
 www.ovh.com
