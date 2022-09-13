@@ -122,8 +122,6 @@ def DNS_Responder(conf,lists):
                             lists[pkt_proto][list_name]['dest_idx'] += 1
                         else:
                             sys.stderr.write("list reset %s/%s\n" % ( pkt_proto,list_name ))
-                            #TODO shuffle? configurable?
-                            #TODO reread file from disk
                             shuffle( lists[pkt_proto][list_name]['dests'] )
                             lists[pkt_proto][list_name]['dest_idx'] = 0 ## reset to beginning
                         resp = generate_response( pkt, dest_ip, pkt_proto )
