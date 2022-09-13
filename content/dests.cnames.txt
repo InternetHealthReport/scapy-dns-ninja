@@ -13,3 +13,4 @@ www.ovh.com
 www.office.com
 teams.microsoft.com
 api.blizzard.com
+pbs.twimg.com
