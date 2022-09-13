@@ -12,3 +12,5 @@ www.cdn77.com
 www.ovh.com
 www.office.com
 teams.microsoft.com
+a.resolvers.level3.net
+www.tencent.com
