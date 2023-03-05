@@ -3,7 +3,7 @@ fbcdn.net
 www.akamai.com
 cloudflare.com
 aws.amazon.com
-https://edg.io/
+edg.io
 www.edgecast.com
 www.twitter.com
 swcdn.apple.com
@@ -18,7 +18,6 @@ api.blizzard.com
 pbs.twimg.com
 nsone.com
 www.incapsula.com 
-https://edg.io/
 www.cdnetworks.com
 bunny.net
 twitchcdn.net
