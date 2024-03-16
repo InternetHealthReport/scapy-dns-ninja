@@ -90,30 +90,36 @@ def getResponse(pkt, conf, re_getlist):
                 return
 
             list_match = re.search( re_getlist, qname )
-            if list_match and os.path.exists( "./%s" % ( list_match.group(1) ) ):
-                #this checks if the path exists
-                list_name = list_match.group(1)
-                if(have_listfile( list_name, pkt_proto ) and ( list_name not in lists[pkt_proto] 
-                            or os.path.getmtime("./%s/dests.%s.txt" % (list_name, pkt_proto) ) > lists[pkt_proto][list_name]['mtime']) ):
-                    ## read if the list wasn't read yet or if the mtime changed
-                    try:
-                        read_destfile( list_name, lists, pkt_proto )
-                    except: 
-                        # list dir does exist, but not for the right proto. return nothing
-                        sys.stderr.write("%s dir exists, but no dests.%s.txt file\n" % ( list_name, pkt_proto ))
-                        return
-                ##if not dests.v[46].txt , see if there is a dests.cnames.txt file
-                elif have_listfile( list_name, 'cnames') and ( list_name not in lists['cnames'] or os.path.getmtime("./%s/dests.cnames.txt" % (list_name) ) > lists['cnames'][list_name]['mtime']):
-                    try:
-                        read_destfile( list_name, lists, 'cnames' )
-                    except: 
-                        # list dir does exist, but not for the right proto. return nothing
-                        sys.stderr.write("%s dir exists, but no dests.%s.txt file\n" % ( list_name, 'cnames' ))
-                        return
+            if list_match is None:
+                return
 
-                ## set pkt_proto to 'cnames' if v4 and v6 list don't exist
-                if list_name in lists['cnames'] and not list_name in lists['v4'] and not list_name in lists['v6']:
-                    pkt_proto = 'cnames'
+            list_name = list_match.group(1)
+            ## set pkt_proto to 'cnames' if v4 and v6 list don't exist
+            if list_name in lists['cnames'] and not list_name in lists['v4'] and not list_name in lists['v6']:
+                pkt_proto = 'cnames'
+
+            if list_match and ( list_name in lists[pkt_proto] or os.path.exists( "./%s" % ( list_name )) ):
+                #this checks if the path exists
+                if list_name not in lists[pkt_proto]:
+                    if have_listfile( list_name, pkt_proto ):
+                        ## read if the list wasn't read yet or if the mtime changed
+                        ## RF: removed because it makes too many disk accesses and anyways new list will be loaded at each cycle
+                        try:
+                            read_destfile( list_name, lists, pkt_proto )
+                        except: 
+                            # list dir does exist, but not for the right proto. return nothing
+                            sys.stderr.write("%s dir exists, but no dests.%s.txt file\n" % ( list_name, pkt_proto ))
+                            return
+                    ##if not dests.v[46].txt , see if there is a dests.cnames.txt file
+                    elif have_listfile( list_name, 'cnames') and ( list_name not in lists['cnames'] or os.path.getmtime("./%s/dests.cnames.txt" % (list_name) ) > lists['cnames'][list_name]['mtime']):
+                        try:
+                            read_destfile( list_name, lists, 'cnames' )
+                            pkt_proto = 'cnames'
+                        except: 
+                            # list dir does exist, but not for the right proto. return nothing
+                            sys.stderr.write("%s dir exists, but no dests.%s.txt file\n" % ( list_name, 'cnames' ))
+                            return
+
                 try:
                     dest_idx = lists[pkt_proto][list_name]['dest_idx']
                     dest_ip = lists[pkt_proto][list_name]['dests'][dest_idx]
@@ -121,6 +127,9 @@ def getResponse(pkt, conf, re_getlist):
                         lists[pkt_proto][list_name]['dest_idx'] += 1
                     else:
                         sys.stderr.write("list reset %s/%s\n" % ( pkt_proto,list_name ))
+                        if os.path.getmtime("./%s/dests.%s.txt" % (list_name, pkt_proto) ) > lists[pkt_proto][list_name]['mtime']:
+                            read_destfile( list_name, lists, pkt_proto )
+
                         shuffle( lists[pkt_proto][list_name]['dests'] )
                         lists[pkt_proto][list_name]['dest_idx'] = 0 ## reset to beginning
                     resp = generate_response( pkt, dest_ip, pkt_proto )
