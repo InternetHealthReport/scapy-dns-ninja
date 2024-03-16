@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 ### adapted from : http://thepacketgeek.com/scapy-p-09-scapy-and-dns/
+from datetime import datetime
 from scapy.layers.inet import IP, UDP
 from scapy.layers.dns import DNS, DNSRR
 from scapy.sendrecv import sniff, send
+from scapy.all import conf as scapy_conf
 import sys
 from random import shuffle
 import re
@@ -23,6 +25,7 @@ def read_conffile( filename ):
 conf = read_conffile('ninja-server.conf')
 lists = {'v4':{},'v6':{}, 'cnames':{}}
 lists_read=0
+socket = scapy_conf.L3socket()
 
 def read_destfile( list_name, lists, proto ):
     filename = "./%s/dests.%s.txt" % ( list_name, proto )
@@ -38,6 +41,7 @@ def read_destfile( list_name, lists, proto ):
     lists[ proto][ list_name ] = { 
         'dests': dests,
         'mtime': os.path.getmtime( filename ),
+        'ltime': datetime.now(),
         'length': len(dests),
         'dest_idx': 0
     }
@@ -127,13 +131,13 @@ def getResponse(pkt, conf, re_getlist):
                         lists[pkt_proto][list_name]['dest_idx'] += 1
                     else:
                         sys.stderr.write("list reset %s/%s\n" % ( pkt_proto,list_name ))
-                        if os.path.getmtime("./%s/dests.%s.txt" % (list_name, pkt_proto) ) > lists[pkt_proto][list_name]['mtime']:
+                        if (datetime.now() - lists[pkt_proto][list_name]['ltime']).total_seconds() > 60*60 and  os.path.getmtime("./%s/dests.%s.txt" % (list_name, pkt_proto) ) > lists[pkt_proto][list_name]['mtime']:
                             read_destfile( list_name, lists, pkt_proto )
 
                         shuffle( lists[pkt_proto][list_name]['dests'] )
                         lists[pkt_proto][list_name]['dest_idx'] = 0 ## reset to beginning
                     resp = generate_response( pkt, dest_ip, pkt_proto )
-                    send(resp,verbose=0)
+                    socket.send(resp)
                     return record( pkt[IP].src, list_name, pkt_proto, dest_ip )
                 except:
                     sys.stderr.write("error on packet: %s\n" % ( pkt.summary() ))
@@ -142,7 +146,7 @@ def getResponse(pkt, conf, re_getlist):
             sys.stderr.write("error while processing packet: %s\n" % ( pkt.summary() ))
             sys.stderr.write("%s" % ( traceback.print_tb( sys.exc_info()[2] ) ))
 
-with Pool(processes=8) as pool:
+with Pool(processes=16) as pool:
     sys.stderr.write( "config loaded, starting operation\n" )
     # there is no TCP because we don't listen on port 53
     filter = "udp port 53 and ip dst %s" % (conf['ServerIP'])
