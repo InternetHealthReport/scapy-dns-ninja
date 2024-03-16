@@ -130,6 +130,7 @@ def getResponse(pkt, conf, re_getlist):
                     sys.stderr.write("error on packet: %s\n" % ( pkt.summary() ))
                     sys.stderr.write(str(sys.exc_info()))
         except:
+            sys.stderr.write("error while processing packet: %s\n" % ( pkt.summary() ))
             sys.stderr.write("%s" % ( traceback.print_tb( sys.exc_info()[2] ) ))
 
 with Pool(processes=8) as pool:
@@ -138,5 +139,4 @@ with Pool(processes=8) as pool:
     filter = "udp port 53 and ip dst %s" % (conf['ServerIP'])
 #    #TODO better regex
     re_getlist = re.compile(r'([a-z0-9\-]+)\.%s\.$' % ( conf['ServerDomain'] ) )
-    scap = sniff(filter=filter,store=0,prn=lambda x: pool.apply_async(getResponse, (x, conf, re_getlist)))
-    scap.summary()
+    scap = sniff(filter=filter, store=0, prn=lambda x: pool.apply_async(getResponse, (x, conf, re_getlist)))

@@ -16,7 +16,7 @@ a.resolvers.level3.net
 www.tencent.com
 api.blizzard.com
 pbs.twimg.com
-www.incapsula.com 
+www.incapsula.com
 www.cdnetworks.com
 bunny.net
 www.cdn.gcore.com
