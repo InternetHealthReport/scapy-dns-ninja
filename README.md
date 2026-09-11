@@ -10,6 +10,39 @@ Feel free to ask for additional domains by [creating a new issue](https://github
 
 
 # Deploy your own
+
+## Running with Docker
+
+A `Dockerfile` and `docker-compose.yml` are provided to run the server in a container.
+The container's port 53/udp is published to port **8053/udp** on the host.
+
+Because scapy sniffs raw traffic instead of binding a UDP socket, the container needs the
+`NET_ADMIN` and `NET_RAW` capabilities, which are already declared in `docker-compose.yml`.
+
+Quick start:
+
+    docker compose up --build -d
+
+By default the entrypoint script (`docker-entrypoint.sh`) auto-generates a
+`ninja-server.conf` file inside the container if one isn't already present, using the
+container's own detected IP address for `ServerIP` (required, since docker's port
+forwarding performs DNAT to the container's internal address) and the `SERVER_DOMAIN`
+environment variable (default: `ninja.example.com`) for `ServerDomain`. Override the
+domain, e.g.:
+
+    SERVER_DOMAIN=random-ip.emileaben.com docker compose up --build -d
+
+To use your own config file instead, mount it over `/app/ninja-server.conf` (see the
+commented-out volume in `docker-compose.yml`).
+
+The list directories (`_default`, `content`, `cruxkz`, or any custom `<listname>`
+directories with `dests.v4.txt` / `dests.v6.txt` / `dests.cnames.txt` files) are mounted
+as volumes so they can be edited on the host without rebuilding the image.
+
+Test it from the host once running:
+
+    dig @127.0.0.1 -p 8053 amsterdam-nl.random-ip.emileaben.com A
+
 ## Installation
 
 Create a *ninja-server.conf* file, as explained below, and then run the ./dns-ninja-server.py process. Because this doesn't listen on a UDP port, but sniffs traffic coming in, care should be taken not to send out ICMP destination unreachable messages. For example, Linux/iptables:
