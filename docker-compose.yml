@@ -15,7 +15,7 @@ services:
       # Leave SERVER_IP unset to auto-detect the container's own IP (recommended,
       # since docker's DNAT rewrites the destination address of forwarded packets).
       # SERVER_IP: 172.17.0.2
-      SERVER_DOMAIN: ninja.example.com
+      SERVER_DOMAIN: ${SERVER_DOMAIN:-ninja.example.com}
     volumes:
       - ./_default:/app/_default
       - ./content:/app/content
