@@ -7,7 +7,7 @@ services:
     container_name: scapy-dns-ninja
     restart: unless-stopped
     ports:
-      - "${DNS_PORT:-8053}:53/udp"
+      - "${HOST_IP:-0.0.0.0}:${HOST_PORT:-8053}:53/udp"
     cap_add:
       - NET_ADMIN
       - NET_RAW
