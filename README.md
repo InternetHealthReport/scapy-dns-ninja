@@ -27,7 +27,7 @@ By default the entrypoint script (`docker-entrypoint.sh`) auto-generates a
 `ninja-server.conf` file inside the container if one isn't already present, using the
 container's own detected IP address for `ServerIP` (required, since docker's port
 forwarding performs DNAT to the container's internal address) and the `SERVER_DOMAIN`
-environment variable (default: `ninja.example.com`) for `ServerDomain`. Override the
+environment variable (default: `ninja.ihr.live`) for `ServerDomain`. Override the
 domain, e.g.:
 
     SERVER_DOMAIN=random-ip.emileaben.com docker compose up --build -d
