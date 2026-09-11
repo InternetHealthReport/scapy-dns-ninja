@@ -14,7 +14,7 @@ Feel free to ask for additional domains by [creating a new issue](https://github
 ## Running with Docker
 
 A `Dockerfile` and `docker-compose.yml` are provided to run the server in a container.
-The container's port 53/udp is published to port **8053/udp** on the host.
+By default, the container's port 53/udp is published to port **8053/udp** on the host.
 
 Because scapy sniffs raw traffic instead of binding a UDP socket, the container needs the
 `NET_ADMIN` and `NET_RAW` capabilities, which are already declared in `docker-compose.yml`.
@@ -31,6 +31,17 @@ environment variable (default: `ninja.ihr.live`) for `ServerDomain`. Override th
 domain, e.g.:
 
     SERVER_DOMAIN=random-ip.emileaben.com docker compose up --build -d
+
+The host port is also configurable via the `DNS_PORT` environment variable (default:
+`8053`). For example, to listen on the standard DNS port 53 instead:
+
+    DNS_PORT=53 docker compose up --build -d
+
+Note that port 53 is a privileged port; make sure no other service (e.g.
+`systemd-resolved`) is already bound to it on the host, or the container will fail to
+start with an "address already in use" error. You can also set `DNS_PORT` (and
+`SERVER_DOMAIN`) permanently in a `.env` file next to `docker-compose.yml` instead of
+passing them on the command line each time.
 
 To use your own config file instead, mount it over `/app/ninja-server.conf` (see the
 commented-out volume in `docker-compose.yml`).
