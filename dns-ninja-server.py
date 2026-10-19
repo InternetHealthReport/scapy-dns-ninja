@@ -11,7 +11,10 @@ from yaml import load, Loader
 import traceback
 import os.path
 from multiprocessing import Pool
+import logging
 
+# Ignore unwanted logs from multiprocessing
+logging.getLogger("multiprocessing").setLevel(logging.WARNING)
 
 def read_conffile(filename):
     conf = {}
