@@ -11,10 +11,7 @@ from yaml import load, Loader
 import traceback
 import os.path
 from multiprocessing import Pool
-import logging
 
-# Ignore unwanted logs from multiprocessing
-logging.getLogger("multiprocessing").setLevel(logging.WARNING)
 
 def read_conffile(filename):
     conf = {}
@@ -86,7 +83,7 @@ def have_listfile(list_name, proto):
         return False
 
 
-def getResponse(pkt, conf, re_getlist):
+def get_response(pkt, conf, re_getlist):
     global dest_idx
     global lists
     if (DNS in pkt and pkt[DNS].opcode == 0 and pkt[DNS].ancount == 0
@@ -154,10 +151,15 @@ def getResponse(pkt, conf, re_getlist):
             sys.stderr.write("%s" % (traceback.print_tb(sys.exc_info()[2])))
 
 
+def response_handler(x):
+    # to make sure sniff is not printing unwanted logs this function shouldn't return anything
+    pool.apply_async(get_response, (x, conf, re_getlist))
+
+
 with Pool(processes=16) as pool:
     sys.stderr.write("config loaded, starting operation\n")
     # there is no TCP because we don't listen on port 53
     filter = "udp port 53 and ip dst %s" % (conf['ServerIP'])
 #    #TODO better regex
     re_getlist = re.compile(r'([a-z0-9\-]+)\.%s\.$' % (conf['ServerDomain']))
-    scap = sniff(filter=filter, store=0, prn=lambda x: pool.apply_async(getResponse, (x, conf, re_getlist)))
+    scap = sniff(filter=filter, store=0, prn=response_handler)
